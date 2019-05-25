@@ -10616,162 +10616,69 @@ module.exports = function Observable (subscribeFunction) {
     }
 }
 },{}],3:[function(require,module,exports){
+const $ = require("jquery");
 const Observable = require("./Observable.js");
-module.exports = function($) {
-    return {
-        numTries : 3,
-        get : function(url) {
-            let self = this;
-            let iteration = 0;
-            let observable = new Observable((observer)=> {
-                let attempt = function() {
-                    if (iteration >= self.numTries) {
-                        observer.next({
-                            status: "FAIL",
-                            url: url
-                        });
-                    } else {
-                        observer.next({
-                            status: "ATTEMPTING",
-                            data : {
-                                attemptNum : iteration,
-                                url : url
-                            }
-                        });
-                        iteration++;
-                        $.get(url)
-                        .done((data, textStatus, response) => {
-                            if (response.status == 200) {
-                                observer.next({
-                                    status: "SUCCESS",
-                                    data : data,
-                                    url : url
-                                })
-                            } else {
-                                observer.next({
-                                    status: "FAILED_ATTEMPT",
-                                    statusCode : response.status,
-                                    url : url
-                                })
-                                attempt();
-                            }
-                        })
-                        .fail((jqXHR, textStatus, errorThrown) =>{
+
+module.exports = {
+    numTries : 3,
+    get : function(url) {
+        let self = this;
+        let iteration = 0;
+        let observable = new Observable((observer)=> {
+            let attempt = function() {
+                if (iteration >= self.numTries) {
+                    observer.next({
+                        status: "FAIL"
+                    });
+                } else {
+                    observer.next({
+                        status: "ATTEMPTING",
+                        data : {
+                            attemptNum : iteration
+                        }
+                    });
+                    iteration++;
+                    $http.get(url)
+                    .then((response) => {
+                        if (response.status == 200) {
+                            observer.next({
+                                status: "SUCCESS",
+                                data : response.data
+                            })
+                        } else {
                             observer.next({
                                 status: "FAILED_ATTEMPT",
-                                statusCode : jqXHR.status,
-                                error : errorThrown,
-                                url : url
+                                statusCode : response.status
                             })
                             attempt();
-                        })
-                    }
+                        }
+                    })
+                    .catch((e) =>{
+                        attempt();
+                    })
                 }
-                attempt();
-            })
-            return observable;
-        }
+            }
+            attempt();
+        })
+        return observable;
     }
 }
-},{"./Observable.js":2}],4:[function(require,module,exports){
-let $ = require("jquery");
-let DurableGet = require("./jquery-durable-get")
-let DurableGetService = DurableGet($);
+},{"./Observable.js":2,"jquery":1}],4:[function(require,module,exports){
+const DurableGet = require("./jquery-durable-get");
 
-let app = function() {
-    let stories = {};
-    let storyIds = [];
-    let loadButton = $("[data-load-button]");
-    let domStoryList = $("[data-story-list]");
+$.ajax = function(a, b) {
+    console.log("ajax");
+    debugger;
+    $.ajax(a, b);
+}
 
-    let topStoriesUrl = "https://shaky-hacker-news.herokuapp.com/topstories";
-    let getItemUrl = function (id) {
-        return `https://shaky-hacker-news.herokuapp.com/item/${id}`
-    }
+describe("jquery-durable-get", () => {
 
-    function buildStoryHTMLElement (id) {
-        let li = document.createElement("li");
-        li.setAttribute("data-story-item",""+ id);
-        return li;
-    }
-
-    function setupDom () {
-        domStoryList.empty();
-
-        for (let i = 0; i < storyIds.length; i++) {
-            let id = storyIds[i];
-            let elt = buildStoryHTMLElement(id);
-            domStoryList.append(elt);
-        }
-        $("[data-story-item]").hide();
-        $("[data-story-item]").addClass("list-group-item");
-
-    }
-
-    function getItem (id) {
-        $.get(getItemUrl(id))
-        .done((data, textStatus, jqXHR) => {
-            stories = data;
-        })
-        .catch((jqXHR, textStatus, errorThrown) => {
-            console.log("couldn't get list of ids");
-        })
-    }
-
-    function getAllItems () {
-        storyIds.forEach((val) => {
-            $(`[data-story-item='${val}']`).text("loading");
-            $(`[data-story-item='${val}']`).show();
-
-
-            $.get(getItemUrl(val))
-            .done((data, textStatus, jqXHR) => {
-                debugger;
-                stories[val] = JSON.parse(data);
-                // domStoryList
-                // let newElt = buildStoryHTMLElement();
-                // newElt.append(document.createTextNode(stories[val].title));
-                // domStoryList.append(newElt);
-                $(`[data-story-item='${val}']`).text(stories[val].title);
-                $(`[data-story-item='${val}']`).show();
-            })
-            .catch((jqXHR, textStatus, errorThrown) => {
-                $(`[data-story-item='${val}']`).text("error: the server did not respond");
-                console.log(jqXHR);
-                console.log(`item ${val} failed`);
-            })
-        });
-    }
-
-    function fetchStories () {
-        DurableGetService.get(topStoriesUrl)
-        .subscribe((val) => {
+    it("can start get", () => {
+        let obs = DurableGet.get("http://www.google.com");
+        obs.subscribe((val)=> {
             console.log(val);
         });
-
-        // $.get(topStoriesUrl)
-        // .done((data, textStatus, jqXHR) => {
-        //     debugger;
-        //     storyIds = JSON.parse(data);
-        //     setupDom();
-        //     getAllItems();
-        // })
-        // .catch((jqXHR, textStatus, errorThrown) => {
-        //     console.log(jqXHR);
-        // })
-
-    }
-
-    function updateView () {
-
-    }
-    $(loadButton).on("click", function() {
-        fetchStories();
     });
-
-}
-
-$(document).ready(function() {
-     app();
- });
-},{"./jquery-durable-get":3,"jquery":1}]},{},[4]);
+});
+},{"./jquery-durable-get":3}]},{},[4]);

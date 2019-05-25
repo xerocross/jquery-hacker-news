@@ -1,4 +1,6 @@
-
+let $ = require("jquery");
+let DurableGet = require("./jquery-durable-get")
+let DurableGetService = DurableGet($);
 
 let app = function() {
     let stories = {};
@@ -33,9 +35,7 @@ let app = function() {
     function getItem (id) {
         $.get(getItemUrl(id))
         .done((data, textStatus, jqXHR) => {
-            console.log(data);
             stories = data;
-            debugger;
         })
         .catch((jqXHR, textStatus, errorThrown) => {
             console.log("couldn't get list of ids");
@@ -46,6 +46,8 @@ let app = function() {
         storyIds.forEach((val) => {
             $(`[data-story-item='${val}']`).text("loading");
             $(`[data-story-item='${val}']`).show();
+
+
             $.get(getItemUrl(val))
             .done((data, textStatus, jqXHR) => {
                 debugger;
@@ -66,16 +68,21 @@ let app = function() {
     }
 
     function fetchStories () {
-        $.get(topStoriesUrl)
-        .done((data, textStatus, jqXHR) => {
-            debugger;
-            storyIds = JSON.parse(data);
-            setupDom();
-            getAllItems();
-        })
-        .catch((jqXHR, textStatus, errorThrown) => {
-            console.log(jqXHR);
-        })
+        DurableGetService.get(topStoriesUrl)
+        .subscribe((val) => {
+            console.log(val);
+        });
+
+        // $.get(topStoriesUrl)
+        // .done((data, textStatus, jqXHR) => {
+        //     debugger;
+        //     storyIds = JSON.parse(data);
+        //     setupDom();
+        //     getAllItems();
+        // })
+        // .catch((jqXHR, textStatus, errorThrown) => {
+        //     console.log(jqXHR);
+        // })
 
     }
 

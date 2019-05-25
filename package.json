@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch" : "watchify src/jquery-hacker-news.js -o public/jquery-hacker-news.js",
-    "start" : "http-server"
+    "watch": "watchify src/jquery-hacker-news.js -o public/jquery-hacker-news.js",
+    "start": "http-server",
+    "test": "karma start ./karma.config.js"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +17,13 @@
     "http-server": "^0.11.1",
     "watchify": "^3.11.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "jasmine": "^3.4.0",
+    "jquery": "^3.4.1",
+    "karma": "^4.1.0",
+    "karma-browserify": "^6.0.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^2.0.1",
+    "rxjs": "^6.5.2"
+  }
 }
