@@ -3,15 +3,43 @@ let DurableGet = require("./jquery-durable-get")
 let DurableGetService = DurableGet($);
 
 let app = function() {
-    let stories = {};
+    let topStoriesUrl = "https://shaky-hacker-news.herokuapp.com/topstories";
+    let getItemUrl = function (id) {
+        return `https://shaky-hacker-news.herokuapp.com/item/${id}`;
+    }
+
+    // let state = {
+    //     mainLoadingMessage : "",
+    //     get mainLoadingMessage () {
+    //         return this.mainLoadingMessage;
+    //     },
+    //     set mainLoadingMessage(val) {
+    //         this.mainLoadingMessage = val;
+    //         $("[main-loadingmessage]").text(val);
+    //     },
+    //     storyIds : [],
+    //     get storyIds () {
+    //         return this.storyIds
+    //     },
+    //     set storyIds (newArr) {
+    //         $("[data-story-list]").empty();
+    //         this.storyIds = newArr;
+    //         for (let i = 0; i < newArr.length; i++) {
+    //             $("[data-story-list]")
+    //         }
+    //     }
+    // }
+    
+    // let updateView = function(state) {
+    //     $("[data-story-list]")
+
+    // }
     let storyIds = [];
+    let stories = {};
     let loadButton = $("[data-load-button]");
     let domStoryList = $("[data-story-list]");
 
-    let topStoriesUrl = "https://shaky-hacker-news.herokuapp.com/topstories";
-    let getItemUrl = function (id) {
-        return `https://shaky-hacker-news.herokuapp.com/item/${id}`
-    }
+    
 
     function buildStoryHTMLElement (id) {
         let li = document.createElement("li");
@@ -47,29 +75,31 @@ let app = function() {
             $(`[data-story-item='${val}']`).text("loading");
             $(`[data-story-item='${val}']`).show();
 
-
-            $.get(getItemUrl(val))
-            .done((data, textStatus, jqXHR) => {
-                debugger;
-                stories[val] = JSON.parse(data);
-                // domStoryList
-                // let newElt = buildStoryHTMLElement();
-                // newElt.append(document.createTextNode(stories[val].title));
-                // domStoryList.append(newElt);
-                $(`[data-story-item='${val}']`).text(stories[val].title);
-                $(`[data-story-item='${val}']`).show();
+            DurableGetService.get({
+                url : getItemUrl(val),
+                dataType : "json"
             })
-            .catch((jqXHR, textStatus, errorThrown) => {
-                $(`[data-story-item='${val}']`).text("error: the server did not respond");
-                console.log(jqXHR);
-                console.log(`item ${val} failed`);
-            })
+            .subscribe( (resp) => {
+                if (resp.status == "SUCCESS") {
+                    stories[val] = resp.data;
+                    $(`[data-story-item='${val}']`).text(resp.data.title);
+                }
+            });
+            
         });
     }
 
     function fetchStories () {
-        DurableGetService.get(topStoriesUrl)
+        DurableGetService.get({
+            url : topStoriesUrl,
+            dataType : "json"
+        })
         .subscribe((val) => {
+            if (val.status == "SUCCESS") {
+                storyIds = val.data.slice(0,50);;
+                setupDom();
+                getAllItems();
+            }
             console.log(val);
         });
 
@@ -89,6 +119,11 @@ let app = function() {
     function updateView () {
 
     }
+
+
+
+
+
     $(loadButton).on("click", function() {
         fetchStories();
     });

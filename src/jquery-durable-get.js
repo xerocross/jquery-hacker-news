@@ -1,13 +1,14 @@
 const Observable = require("./Observable.js");
 module.exports = function($) {
     return {
-        numTries : 3,
-        get : function(url) {
+
+        get : function(configObject) {
+            const { numTries, url, dataType } = configObject;
             let self = this;
             let iteration = 0;
             let observable = new Observable((observer)=> {
                 let attempt = function() {
-                    if (iteration >= self.numTries) {
+                    if (iteration >= numTries) {
                         observer.next({
                             status: "FAIL",
                             url: url
@@ -21,7 +22,9 @@ module.exports = function($) {
                             }
                         });
                         iteration++;
-                        $.get(url)
+                        $.ajax(url, {
+                            dataType: dataType
+                        })
                         .done((data, textStatus, response) => {
                             if (response.status == 200) {
                                 observer.next({
